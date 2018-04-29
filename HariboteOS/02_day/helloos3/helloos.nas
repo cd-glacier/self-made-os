@@ -5,7 +5,7 @@
 
 ; 以下は標準的なFAT12フォーマットフロッピーディスクのための記述
 
-		JMP		entry
+		JMP		entry         ; JMP 0x7c50ともかける
 		DB		0x90
 		DB		"HELLOIPL"		; ブートセクタの名前を自由に書いてよい（8バイト）
 		DW		512				; 1セクタの大きさ（512にしなければいけない）
@@ -28,7 +28,7 @@
 
 ; プログラム本体
 
-entry:
+entry:              ; ラベルは全て,メモリの番地として機械語に解釈される
 		MOV		AX,0			; レジスタ初期化
 		MOV		SS,AX
 		MOV		SP,0x7c00
@@ -37,23 +37,25 @@ entry:
 
 		MOV		SI,msg
 putloop:
-		MOV		AL,[SI]
+		MOV		AL,[SI]   ; SIの番地の*データ*をALに代入, ALはレジスタ
+                    ; MOV BYTE [678],123 とかすると678番地に123を代入
+                    ; もちろん123は二進数としてメモリに格納される
 		ADD		SI,1			; SIに1を足す
 		CMP		AL,0
-		JE		fin
-		MOV		AH,0x0e			; 一文字表示ファンクション
+		JE		fin       ; JE(Jump if Equal)
+		MOV		AH,0x0e		; 一文字表示ファンクション
 		MOV		BX,15			; カラーコード
 		INT		0x10			; ビデオBIOS呼び出し
 		JMP		putloop
 fin:
-		HLT						; 何かあるまでCPUを停止させる
+		HLT						  ; 何かあるまでCPUを停止させる
 		JMP		fin				; 無限ループ
 
-msg:
+msg:                ; 多分msgラベルがさす番地は下の0x0aが格納されている番地
 		DB		0x0a, 0x0a		; 改行を2つ
 		DB		"hello, world"
-		DB		0x0a			; 改行
-		DB		0
+		DB		0x0a			    ; 改行
+		DB		0             ; CMP命令で比較される0
 
 		RESB	0x7dfe-$		; 0x7dfeまでを0x00で埋める命令
 
